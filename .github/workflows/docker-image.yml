@@ -1,0 +1,32 @@
+name: Docker Image
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+
+    - name: Build the Docker image
+      run: |
+        SONARQUBE_VERSION=$(grep ^FROM Dockerfile | cut -d ':' -f 2)
+        CABL_VERSION=$(cat cabl-version.txt)
+        docker build -t docker.pkg.github.com/riverside-software/sonarqube-cabl-dockerfile/sonarqube-$SONARQUBE_VERSION-cabl:$CABL_VERSION .
+        docker tag docker.pkg.github.com/riverside-software/sonarqube-cabl-dockerfile/sonarqube-$SONARQUBE_VERSION-cabl:$CABL_VERSION docker.pkg.github.com/riverside-software/sonarqube-cabl-dockerfile/sonarqube-$SONARQUBE_VERSION-cabl:latest
+
+    - name: Log into registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
+
+    - name: Push image
+      run: |
+        SONARQUBE_VERSION=$(grep ^FROM Dockerfile | cut -d ':' -f 2)
+        CABL_VERSION=$(cat cabl-version.txt)
+        docker push docker.pkg.github.com/riverside-software/sonarqube-cabl-dockerfile/sonarqube-$SONARQUBE_VERSION-cabl:$CABL_VERSION
+        docker push docker.pkg.github.com/riverside-software/sonarqube-cabl-dockerfile/sonarqube-$SONARQUBE_VERSION-cabl:latest
